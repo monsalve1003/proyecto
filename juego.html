@@ -6,12 +6,10 @@
     <title>Barrel Duel - Lucha de Gorilas</title>
     <meta name="description" content="Juega al clásico duelo de gorilas en este emocionante juego multijugador">
     <style>
-        /* Reset y estilos base */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    * {
+        padding: 0;
+        box-sizing: border-box;
+    }
 
         body {
             font-family: 'Arial', sans-serif;
@@ -338,7 +336,119 @@
             </dialog>
         </div>
     </main>
+    <script>
+        
+let vidaJugador1 = 100;
+let vidaJugador2 = 100;
+let tiempo = 90; 
+let juegoActivo = false;
+let intervaloTiempo;
 
+
+const barraVida1 = document.querySelector(".jugador-1 .vida-restante");
+const barraVida2 = document.querySelector(".jugador-2 .vida-restante");
+const estado1 = document.querySelector(".jugador-1 .estado-jugador");
+const estado2 = document.querySelector(".jugador-2 .estado-jugador");
+const tiempoElemento = document.querySelector(".contador-tiempo");
+const rondaElemento = document.querySelector(".ronda-actual");
+const btnIniciar = document.getElementById("btn-iniciar");
+const modal = document.getElementById("modal-resultado");
+const mensajeModal = modal.querySelector(".mensaje-resultado");
+const btnRevancha = modal.querySelector(".boton-primario");
+const btnEstadisticas = modal.querySelector(".boton-secundario");
+
+
+function actualizarVida() {
+  barraVida1.style.width = vidaJugador1 + "%";
+  barraVida2.style.width = vidaJugador2 + "%";
+
+  estado1.textContent = vidaJugador1 > 0 ? "En combate" : "Derrotado";
+  estado2.textContent = vidaJugador2 > 0 ? "En combate" : "Derrotado";
+}
+
+
+function actualizarTiempo() {
+  let min = Math.floor(tiempo / 60);
+  let seg = tiempo % 60;
+  tiempoElemento.textContent = `${min.toString().padStart(2, "0")}:${seg.toString().padStart(2, "0")}`;
+}
+
+
+function finalizarJuego() {
+  juegoActivo = false;
+  clearInterval(insservaloTiempo);
+
+  let ganador = "";
+  if (vidaJugador1 > vidaJugador2) ganador = "El gorila azul ha ganado la partida";
+  else if (vidaJugador2 > vidaJugador1) ganador = "El gorila rojo ha ganado la partida";
+  else ganador = "¡Empate!";
+
+  mensajeModal.textContent = ganador;
+  modal.showModal();
+}
+
+
+function reiniciarJuego() {
+  vidaJugador1 = 100;
+  vidaJugador2 = 100;
+  tiempo = 90;
+  juegoActivo = true;
+  actualizarVida();
+  actualizarTiempo();
+  rondaElemento.textContent = "Ronda 1";
+  modal.close();
+
+  intervaloTiempo = setInterval(() => {
+    if (!juegoActivo) return;
+    tiempo--;
+    actualizarTiempo();
+    if (tiempo <= 0) {
+      finalizarJuego();
+    }
+  }, 1000);
+}
+
+
+window.addEventListener("keydown", (e) => {
+  if (!juegoActivo) return;
+
+  const tecla = e.key.toLowerCase();
+
+  if (tecla === "f" && vidaJugador2 > 0) {
+    vidaJugador2 -= 10;
+    if (vidaJugador2 < 0) vidaJugador2 = 0;
+    actualizarVida();
+    if (vidaJugador2 === 0) finalizarJuego();
+  }
+
+  if (tecla === "m" && vidaJugador1 > 0) {
+    vidaJugador1 -= 10;
+    if (vidaJugador1 < 0) vidaJugador1 = 0;
+    actualizarVida();
+    if (vidaJugador1 === 0) finalizarJuego();
+  }
+});
+
+
+btnIniciar.addEventListener("click", () => {
+  if (!juegoActivo) reiniciarJuego();
+});
+
+
+btnRevancha.addEventListener("click", () => {
+  reiniciarJuego();
+});
+
+
+btnEstadisticas.addEventListener("click", () => {
+  alert(`Estadísticas:\nGorila Azul: ${vidaJugador1} HP\nGorila Rojo: ${vidaJugador2} HP`);
+});
+
+
+actualizarVida();
+actualizarTiempo();
+
+    </script>
     <footer class="pie-pagina">
         <div class="enlaces-footer">
             <a href="#">Contacto</a>
