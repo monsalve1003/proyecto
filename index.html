@@ -145,6 +145,15 @@
             background: #e74c3c;
         }
 
+        .barril {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #8B4513;
+            border-radius: 50%;
+            border: 2px solid #654321;
+        }
+
         .plataforma {
             position: absolute;
             background: #8B4513;
@@ -245,10 +254,21 @@
             display: flex;
             justify-content: space-between;
             margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .boton-secundario {
             background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        .boton-terciario {
+            background: #f39c12;
             color: white;
             border: none;
             border-radius: 5px;
@@ -361,6 +381,7 @@
                 <div class="acciones-modal">
                     <button class="boton-secundario">Ver estadísticas</button>
                     <button class="boton-primario">Siguiente Nivel</button>
+                    <button class="boton-terciario">Reiniciar Juego</button>
                 </div>
             </dialog>
             <dialog id="modal-derrota">
@@ -369,6 +390,7 @@
                 <div class="acciones-modal">
                     <button class="boton-secundario">Ver estadísticas</button>
                     <button class="boton-primario">Reiniciar Nivel</button>
+                    <button class="boton-terciario">Reiniciar Juego</button>
                 </div>
             </dialog>
         </div>
@@ -395,17 +417,22 @@ const modalDerrota = document.getElementById("modal-derrota");
 const mensajeModalVictoria = modalVictoria.querySelector(".mensaje-resultado");
 const mensajeModalDerrota = modalDerrota.querySelector(".mensaje-resultado");
 const btnSiguiente = modalVictoria.querySelector(".boton-primario");
-const btnReiniciar = modalDerrota.querySelector(".boton-primario");
+const btnReiniciarNivel = modalDerrota.querySelector(".boton-primario");
 const btnEstadisticasVictoria = modalVictoria.querySelector(".boton-secundario");
 const btnEstadisticasDerrota = modalDerrota.querySelector(".boton-secundario");
+const btnReiniciarJuegoVictoria = modalVictoria.querySelector(".boton-terciario");
+const btnReiniciarJuegoDerrota = modalDerrota.querySelector(".boton-terciario");
 
 const jugador = document.getElementById("jugador");
 const enemigo = document.getElementById("enemigo");
+const areaJuego = document.querySelector(".area-juego");
 
 let posJugadorX = 100;
 let posJugadorY = 200;
 let posEnemigoX = 650;
 let posEnemigoY = 200;
+
+let barriles = []; // Array para almacenar barriles activos
 
 function actualizarVida() {
   barraVidaJugador.style.width = vidaJugador + "%";
@@ -459,142 +486,46 @@ function comportamientoEnemigo() {
   let dy = 0;
   let distancia = calcularDistancia();
 
-  if (distancia > 200) {
-
-    dx = posJugadorX > posEnemigoX ? 5 : -5;
-    dy = posJugadorY > posEnemigoY ? 5 : -5;
-  } else if (distancia < 100) {
-    
-    dx = posJugadorX < posEnemigoX ? 5 : -5;
-    dy = posJugadorY < posEnemigoY ? 5 : -5;
+  if (distancia > 150) {
+    // Acercarse más rápido
+    dx = posJugadorX > posEnemigoX ? 10 : -10;
+    dy = posJugadorY > posEnemigoY ? 10 : -10;
+  } else if (distancia < 80) {
+    // Alejarse más rápido
+    dx = posJugadorX < posEnemigoX ? 10 : -10;
+    dy = posJugadorY < posEnemigoY ? 10 : -10;
   } else {
-    
-    dx = (Math.random() - 0.5) * 10;
-    dy = (Math.random() - 0.5) * 10;
+    // Movimiento aleatorio más ágil
+    dx = (Math.random() - 0.5) * 20;
+    dy = (Math.random() - 0.5) * 20;
   }
 
   moverEnemigo(dx, dy);
 
   
-  if (distancia < 300 && Math.random() < 0.4) {
+  if (distancia < 250 && Math.random() < 0.5) { // Disparar más frecuentemente
     dispararEnemigo();
   }
 }
 
-function dispararEnemigo() {
-  if (!juegoActivo || vidaJugador <= 0) return;
-  vidaJugador -= 10;
-  if (vidaJugador < 0) vidaJugador = 0;
-  actualizarVida();
-  if (vidaJugador === 0) finalizarJuego(false);
-}
+function crearBarril(origenX, origenY, destinoX, destinoY, esJugador) {
+  const barril = document.createElement("div");
+  barril.className = "barril";
+  barril.style.left = origenX + 15 + "px"; // Centrar en el gorila (50px / 2 - 10px)
+  barril.style.top = origenY + 15 + "px";
+  areaJuego.appendChild(barril);
 
-function finalizarJuego(victoria) {
-  juegoActivo = false;
-  clearInterval(intervaloTiempo);
-  clearInterval(intervaloEnemigo);
+  const dx = destinoX - origenX;
+  const dy = destinoY - origenY;
+  const distancia = Math.sqrt(dx * dx + dy * dy);
+  const velocidad = 5; // Velocidad del barril
+  const pasos = distancia / velocidad;
+  let pasoActual = 0;
 
-  if (victoria) {
-    mensajeModalVictoria.textContent = `¡Has completado el Nivel ${nivelActual}! ¿Continuar al siguiente nivel?`;
-    modalVictoria.showModal();
-  } else {
-    mensajeModalDerrota.textContent = `Derrota en el Nivel ${nivelActual}. ¿Intentar de nuevo?`;
-    modalDerrota.showModal();
-  }
-}
+  const intervaloBarril = setInterval(() => {
+    pasoActual++;
+    const progreso = pasoActual / pasos;
+    const x = origenX + dx * progreso;
+    const y = origen
 
-function iniciarNivel() {
-  vidaJugador = 100;
-  vidaEnemigo = 100 + (nivelActual - 1) * 20;
-  tiempo = 90;
-  juegoActivo = true;
-  actualizarVida();
-  actualizarTiempo();
-  nivelElemento.textContent = `Nivel ${nivelActual}`;
-  modalVictoria.close();
-  modalDerrota.close();
-
-  intervaloTiempo = setInterval(() => {
-    if (!juegoActivo) return;
-    tiempo--;
-    actualizarTiempo();
-    if (tiempo <= 0) {
-      finalizarJuego(false);
-    }
-  }, 1000);
-
- 
-  intervaloEnemigo = setInterval(comportamientoEnemigo, 500);
-}
-
-function siguienteNivel() {
-  nivelActual++;
-  iniciarNivel();
-}
-
-function reiniciarNivel() {
-  iniciarNivel();
-}
-
-window.addEventListener("keydown", (e) => {
-  if (!juegoActivo) return;
-
-  const tecla = e.key.toLowerCase();
-  const velocidad = 10;
-
-  if (tecla === "w") moverJugador(0, -velocidad);
-  if (tecla === "s") moverJugador(0, velocidad);
-  if (tecla === "a") moverJugador(-velocidad, 0);
-  if (tecla === "d") moverJugador(velocidad, 0);
-  if (tecla === "f") dispararJugador();
-});
-
-function dispararJugador() {
-  if (!juegoActivo || vidaEnemigo <= 0) return;
-  const danio = Math.floor(15 + Math.random() * 11); 
-  vidaEnemigo -= danio;
-  if (vidaEnemigo < 0) vidaEnemigo = 0;
-  actualizarVida();
-  if (vidaEnemigo === 0) finalizarJuego(true);
-}
-
-
-btnIniciar.addEventListener("click", () => {
-  iniciarNivel();
-});
-
-btnSiguiente.addEventListener("click", () => {
-  if (modalVictoria.open) modalVictoria.close();
-  siguienteNivel();
-});
-
-btnReiniciar.addEventListener("click", () => {
-  if (modalDerrota.open) modalDerrota.close();
-  reiniciarNivel();
-});
-
-btnEstadisticasVictoria.addEventListener("click", () => {
-  alert(`Estadísticas del Nivel ${nivelActual}:\nVida Jugador: ${vidaJugador}\nVida Enemigo: ${vidaEnemigo}`);
-});
-
-btnEstadisticasDerrota.addEventListener("click", () => {
-  alert(`Estadísticas del Nivel ${nivelActual}:\nVida Jugador: ${vidaJugador}\nVida Enemigo: ${vidaEnemigo}`);
-});
-
-
-modalVictoria.addEventListener("click", (e) => {
-  const rect = modalVictoria.getBoundingClientRect();
-  if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
-    modalVictoria.close();
-  }
-});
-modalDerrota.addEventListener("click", (e) => {
-  const rect = modalDerrota.getBoundingClientRect();
-  if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
-    modalDerrota.close();
-  }
-});
-</script>
-</body>
-</html>
 
